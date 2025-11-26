@@ -1,0 +1,58 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  // 仮のファイルパス
+  // url      = "file:./dev.db" バージョン変更により削除
+}
+
+model Event {
+  id             String   @id @default(uuid())
+  title          String
+  description    String?
+  // 期間指定の場合の開始・終了（ISO文字列で保存）
+  periodStart    DateTime
+  periodEnd      DateTime
+  // 飛び飛びの日程候補
+  candidateDates CandidateDate[]
+  
+  participants   Participant[]
+  createdAt      DateTime @default(now())
+}
+
+model CandidateDate {
+  id      String @id @default(cuid())
+  dateStr String // "YYYY-MM-DD"
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId String
+}
+
+model Participant {
+  id             String         @id @default(cuid())
+  name           String
+  mode           String         // "whitelist" | "blacklist"
+  event          Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId        String
+  availabilities Availability[]
+}
+
+model Availability {
+  id            String      @id @default(cuid())
+  dateStr       String
+  memo          String?
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  participantId String
+  timeRanges    TimeRange[]
+}
+
+model TimeRange {
+  id             String       @id @default(cuid())
+  start          String       // "HH:mm" or ""
+  end            String       // "HH:mm" or ""
+  availability   Availability @relation(fields: [availabilityId], references: [id], onDelete: Cascade)
+  availabilityId String
+}
