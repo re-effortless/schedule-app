@@ -5,15 +5,15 @@ import EventDashboard from '@/components/EventDashboard'; // メインのUIコ�
 
 // URLパラメータの型定義
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // サーバーコンポーネントとして非同期関数(async)を定義
 export default async function EventPage({ params }: PageProps) {
   // 1. URLからIDを取得
-  const { id } = params;
+  const { id } = await params;
 
   // 2. データベースからデータを取得（関連テーブルも結合）
   const eventRaw = await prisma.event.findUnique({

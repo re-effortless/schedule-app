@@ -6,8 +6,7 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  // 仮のファイルパス
-  // url      = "file:./dev.db" バージョン変更により削除
+  url      = env("DATABASE_URL")
 }
 
 model Event {
