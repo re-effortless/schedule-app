@@ -1,7 +1,9 @@
+// app\page.tsx
+
 'use client';
 
 import React from 'react';
-import { CreateEventScreen } from '@/components/EventCreationForm'; // 後述のコンポーネント化
+import { CreateEventScreen } from '@/components/EventCreationForm';
 import { createEvent } from '@/lib/actions';
 
 export default function Home() {

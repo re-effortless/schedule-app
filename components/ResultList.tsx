@@ -1,3 +1,5 @@
+// components\ResultList.tsx
+
 import React, { useState, useMemo } from 'react';
 import { Users, AlertCircle, MessageCircle } from 'lucide-react';
 import { format, parseISO, eachDayOfInterval } from 'date-fns';

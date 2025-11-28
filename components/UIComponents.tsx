@@ -1,3 +1,5 @@
+// components\UIComponents.tsx
+
 import React, { useState } from 'react';
 import { Copy } from 'lucide-react';
 

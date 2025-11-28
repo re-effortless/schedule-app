@@ -1,3 +1,5 @@
+// app\events\[id]\page.tsx :セッション（イベント）のデータ処理
+
 import React from 'react';
 import { notFound } from 'next/navigation';
 import prisma from '@/lib/prisma'; // 作成済みのPrismaクライアント

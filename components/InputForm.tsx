@@ -1,3 +1,5 @@
+// components\InputForm.tsx :予定の入力
+
 import React, { useState, useMemo } from 'react';
 import { 
   Check, X, Copy, AlertCircle, Plus, Clock, Trash2, Loader2 
