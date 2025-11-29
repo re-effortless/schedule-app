@@ -3,6 +3,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Calendar, Check, Loader2, ChevronLeft, ChevronRight 
 } from 'lucide-react';
@@ -125,7 +126,7 @@ const DateSelector = ({ selectedDates, onChange, disabled = false }: DateSelecto
 // --- メインコンポーネント: CreateEventScreen ---
 
 interface CreateEventScreenProps {
-  onCreate: (data: any) => Promise<void>;
+  onCreate: (data: any) => Promise<{ id: string }>;
 }
 
 export const CreateEventScreen = ({ onCreate }: CreateEventScreenProps) => {
@@ -133,6 +134,8 @@ export const CreateEventScreen = ({ onCreate }: CreateEventScreenProps) => {
   const [description, setDescription] = useState('');
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,23 +145,29 @@ export const CreateEventScreen = ({ onCreate }: CreateEventScreenProps) => {
     }
 
     setIsSubmitting(true);
-
+      // Server Actionに渡す前に文字列(ISO)に変換する
     try {
       const sorted = sortDates(selectedDates);
-      const start = parseISO(sorted[0]);
-      const end = parseISO(sorted[sorted.length - 1]);
+      const start = parseISO(sorted[0]).toISOString();
+      const end = parseISO(sorted[sorted.length - 1]).toISOString();
 
-      await onCreate({
+      const result = await onCreate({
         title,
         description,
         candidateDates: sorted,
         period: { start, end },
         participants: []
       });
-      // 成功時のリダイレクトはServer Action側で行われるため、ここでは何もしない
+      
+      // クライアント側で画面遷移を行う
+      router.push(`/events/${result.id}`);
+      // 遷移が完了するまでローディング表示を維持
+
+      // 成功時のリダイレクトはServer Action側で行われるため、ここでは何もしない. リダイレクトエラーの場合は無視する（あるいはそのままthrowする）
     } catch (error) {
       console.error("Failed to create event", error);
       alert("イベントの作成に失敗しました。");
+      // エラー時のみローディングを解除して再操作可能にする
       setIsSubmitting(false);
     }
   };

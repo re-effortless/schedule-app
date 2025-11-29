@@ -2,7 +2,6 @@
 'use server';
 
 import prisma from './prisma';
-import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
 // イベント作成
@@ -21,7 +20,7 @@ export async function createEvent(data: any) {
     }
   });
 
-  redirect(`/events/${event.id}`);
+  return { id: event.id };
 }
 
 // 参加者情報の登録・更新
@@ -37,7 +36,7 @@ export async function saveParticipant(eventId: string, participantData: any) {
   await prisma.$transaction(async (tx) => {
     // 既存の同名ユーザー、あるいはID指定があれば削除
     if (id) {
-        await tx.participant.deleteMany({ where: { id } });
+        await tx.participant.delete({ where: { id } });
     }
 
     await tx.participant.create({
