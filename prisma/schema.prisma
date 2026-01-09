@@ -16,6 +16,10 @@ model Event {
   // 期間指定の場合の開始・終了（ISO文字列で保存）
   periodStart    DateTime
   periodEnd      DateTime
+
+  //Password
+  password       String?
+
   // 飛び飛びの日程候補
   candidateDates CandidateDate[]
   
