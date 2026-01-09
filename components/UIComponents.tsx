@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Copy } from 'lucide-react';
 
-// --- TimeSelector --- (5分刻みプルダウン)
+// --- TimeSelector (Popover with Scrollable Lists) ---
 interface TimeSelectorProps {
   value: string;
   onChange: (val: string) => void;
@@ -12,50 +12,102 @@ interface TimeSelectorProps {
 }
 
 export const TimeSelector = ({ value, onChange, className, placeholder = "--" }: TimeSelectorProps) => {
+  const [isOpen, setIsOpen] = useState(false);
   const [h, m] = value ? value.split(':') : ['', ''];
+
   const hours = [...Array(24).keys()].map(i => String(i).padStart(2, '0'));
   const minutes = [...Array(12).keys()].map(i => String(i * 5).padStart(2, '0'));
 
-  const handleHourChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newH = e.target.value;
-    if (!newH) {
+  const handleSelect = (newH: string, newM: string) => {
+    if (!newH && !newM) {
       onChange('');
-      return;
+    } else {
+      const finalH = newH || '00';
+      const finalM = newM || '00';
+      onChange(`${finalH}:${finalM}`);
     }
-    const newM = m || '00';
-    onChange(`${newH}:${newM}`);
-  };
-
-  const handleMinuteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newM = e.target.value;
-    if (!h) return;
-    onChange(`${h}:${newM}`);
   };
 
   return (
-    <div className={`flex items-center justify-center ${className}`}>
-      <div className="relative">
-        <select 
-          value={h} 
-          onChange={handleHourChange}
-          className={`bg-transparent appearance-none outline-none text-center font-mono cursor-pointer pr-3 py-1 hover:text-indigo-600 transition-colors ${!h ? 'text-gray-400' : 'text-gray-800'}`}
-        >
-          <option value="">{placeholder}</option>
-          {hours.map(hour => <option key={hour} value={hour}>{hour}</option>)}
-        </select>
-      </div>
-      <span className="text-gray-400 -mx-1">:</span>
-      <div className="relative">
-        <select 
-          value={m} 
-          onChange={handleMinuteChange}
-          className={`bg-transparent appearance-none outline-none text-center font-mono cursor-pointer pl-3 py-1 hover:text-indigo-600 transition-colors ${!h ? 'text-gray-300 cursor-not-allowed' : 'text-gray-800'}`}
-          disabled={!h}
-        >
-          {!h && <option value="">--</option>}
-          {h && minutes.map(minute => <option key={minute} value={minute}>{minute}</option>)}
-        </select>
-      </div>
+    <div className={`relative ${className}`}>
+      {/* Trigger Button */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`
+          flex items-center justify-center gap-1 w-full px-2 py-1.5 
+          border border-gray-200 rounded-md bg-white 
+          text-sm font-mono transition-all
+          ${isOpen ? 'ring-2 ring-indigo-100 border-indigo-400' : 'hover:border-indigo-300'}
+          ${!h ? 'text-gray-400' : 'text-gray-900 font-bold'}
+        `}
+      >
+        {value || <span className="text-gray-300">{placeholder}</span>}
+      </button>
+
+      {/* Popover */}
+      {isOpen && (
+        <>
+          {/* Backdrop to close on click outside */}
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+
+          <div className="absolute top-full left-0 mt-1 z-50 p-2 bg-white rounded-lg shadow-xl border border-gray-100 w-48 animate-in fade-in zoom-in-95 duration-100">
+            <div className="flex gap-2 h-48">
+              {/* Hours Column */}
+              <div className="flex-1 flex flex-col gap-1 overflow-y-auto no-scrollbar scroll-smooth">
+                <div className="text-xs font-bold text-gray-400 text-center sticky top-0 bg-white py-1">時</div>
+                {hours.map(hour => (
+                  <button
+                    key={hour}
+                    type="button"
+                    onClick={() => handleSelect(hour, m)}
+                    className={`
+                                    py-1 px-2 text-sm rounded transition-colors
+                                    ${h === hour
+                        ? 'bg-indigo-600 text-white font-bold'
+                        : 'hover:bg-indigo-50 text-gray-700'
+                      }
+                                `}
+                  >
+                    {hour}
+                  </button>
+                ))}
+              </div>
+
+              <div className="w-px bg-gray-100 my-2" />
+
+              {/* Minutes Column */}
+              <div className="flex-1 flex flex-col gap-1 overflow-y-auto no-scrollbar">
+                <div className="text-xs font-bold text-gray-400 text-center sticky top-0 bg-white py-1">分</div>
+                {minutes.map(minute => (
+                  <button
+                    key={minute}
+                    type="button"
+                    onClick={() => handleSelect(h || '00', minute)}
+                    className={`
+                                    py-1 px-2 text-sm rounded transition-colors
+                                    ${m === minute
+                        ? 'bg-indigo-600 text-white font-bold'
+                        : 'hover:bg-indigo-50 text-gray-700'
+                      }
+                                `}
+                  >
+                    {minute}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Clear Button */}
+            <button
+              onClick={() => { onChange(''); setIsOpen(false); }}
+              className="w-full mt-2 pt-2 border-t border-gray-100 text-xs text-red-400 hover:text-red-500 hover:bg-red-50 py-1 rounded transition-colors"
+            >
+              選択を解除
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 };
@@ -97,9 +149,8 @@ export const BulkInputModal = ({ isOpen, onClose, onApply }: BulkInputModalProps
                 <button
                   key={d.val}
                   onClick={() => toggleDay(d.val)}
-                  className={`w-10 h-10 rounded-full font-bold text-sm transition-colors ${
-                    selectedDays.includes(d.val) ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                  className={`w-10 h-10 rounded-full font-bold text-sm transition-colors ${selectedDays.includes(d.val) ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
                 >
                   {d.label}
                 </button>
