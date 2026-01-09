@@ -12,21 +12,50 @@ interface PageProps {
   }>;
 }
 
+import { cookies } from 'next/headers';
+import { PasswordGate } from '@/components/PasswordGate';
+
+// ... (other imports)
+
 // サーバーコンポーネントとして非同期関数(async)を定義
 export default async function EventPage({ params }: PageProps) {
   // 1. URLからIDを取得
   const { id } = await params;
 
-  // 2. データベースからデータを取得（関連テーブルも結合）
+  // 2. データベースからデータを取得（まずパスワードのみチェック）
+  const eventMeta = await prisma.event.findUnique({
+    where: { id },
+    select: { password: true }
+  });
+
+  if (!eventMeta) {
+    notFound();
+  }
+
+  // --- パスワード保護のチェック ---
+  if (eventMeta.password) {
+    const cookieStore = await cookies();
+    const authCookie = cookieStore.get(`event_auth_${id}`);
+
+    // Cookieがない、または無効な場合はGateを表示
+    if (!authCookie || authCookie.value !== 'true') {
+      return (
+        <PasswordGate eventId={id} />
+      );
+    }
+  }
+
+  // 3. データ取得 (フルデータ) - ここまで来たら閲覧可能
   const eventRaw = await prisma.event.findUnique({
     where: { id },
     include: {
-      candidateDates: true, // 候補日テーブル
-      participants: {       // 参加者テーブル
+      // ... (same as original)
+      candidateDates: true,
+      participants: {
         include: {
-          availabilities: { // 回答テーブル
+          availabilities: {
             include: {
-              timeRanges: true // 時間帯テーブル
+              timeRanges: true
             }
           }
         }
@@ -34,33 +63,25 @@ export default async function EventPage({ params }: PageProps) {
     }
   });
 
-  // データが見つからない場合は 404 ページを表示
   if (!eventRaw) {
-    notFound();
+    notFound(); // Should not happen given previous check
   }
 
-  // 3. データ整形 (Server Component -> Client Component へ渡すためのシリアライズ)
-  // PrismaのDateTime型オブジェクトは、そのままClient Componentに渡すと警告が出る場合があるため、
-  // 文字列(ISO String)に変換するのが安全です。
-  
+  // 4. データ整形 
   const eventData = {
+    // ... (same mapping as original)
     id: eventRaw.id,
     title: eventRaw.title,
-    description: eventRaw.description || '', // nullの場合は空文字に
-    
-    // Dateオブジェクト -> 文字列配列
+    description: eventRaw.description || '',
     candidateDates: eventRaw.candidateDates.map(d => d.dateStr),
-    
     period: {
-      start: eventRaw.periodStart.toISOString(), // 文字列化
-      end: eventRaw.periodEnd.toISOString(),     // 文字列化
+      start: eventRaw.periodStart.toISOString(),
+      end: eventRaw.periodEnd.toISOString(),
     },
-    
-    // ネストされた参加者データの整形
     participants: eventRaw.participants.map(p => ({
       id: p.id,
       name: p.name,
-      mode: p.mode as 'whitelist' | 'blacklist', // 型アサーション
+      mode: p.mode as 'whitelist' | 'blacklist',
       availabilities: p.availabilities.map(a => ({
         dateStr: a.dateStr,
         memo: a.memo || '',
@@ -72,7 +93,6 @@ export default async function EventPage({ params }: PageProps) {
     }))
   };
 
-  // 4. 整形したデータをクライアントコンポーネントに渡す
   return (
     <div className="min-h-screen bg-slate-50 text-gray-800 font-sans">
       <EventDashboard initialEventData={eventData} />

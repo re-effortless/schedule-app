@@ -6,7 +6,7 @@ import React, { useState, useMemo } from 'react';
 import { InputForm } from './InputForm'; // 元のInputFormを別ファイル化または内部定義
 import { ResultList } from './ResultList'; // 元のResultListを別ファイル化
 import { saveParticipant, deleteParticipant } from '@/lib/actions';
-import { Calendar, Edit3, Check, Plus, Trash2, Pen } from 'lucide-react';
+import { Calendar, Edit3, Check, Plus, Trash2, Pen, Share2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 // ... (ResultList, InputForm のコードは元のコードを流用し、適宜import修正)
@@ -34,6 +34,12 @@ export default function EventDashboard({ initialEventData }: { initialEventData:
     }
   };
 
+  const copyShareUrl = () => {
+    const url = `${window.location.origin}/events/${eventData.id}`;
+    navigator.clipboard.writeText(url);
+    alert('共有URLをコピーしました！');
+  };
+
   // ... (以下、元のDashboardのreturn文のUIロジックとほぼ同じ)
   // 変更点: onUpdateEventは不要になり、サーバーアクション経由で更新される
 
@@ -57,14 +63,24 @@ export default function EventDashboard({ initialEventData }: { initialEventData:
     <div className="max-w-3xl mx-auto pb-20">
       {/* ヘッダーエリア */}
       <div className="bg-white border-b border-indigo-100 sticky top-0 z-20 shadow-sm">
-        <div className="p-4">
-          <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <Calendar className="w-6 h-6 text-indigo-600" />
-            {eventData.title}
-          </h1>
-          {eventData.description && (
-            <p className="text-sm text-gray-500 mt-2 ml-8 whitespace-pre-wrap">{eventData.description}</p>
-          )}
+        <div className="p-4 flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <Calendar className="w-6 h-6 text-indigo-600" />
+              {eventData.title}
+            </h1>
+            {eventData.description && (
+              <p className="text-sm text-gray-500 mt-2 ml-8 whitespace-pre-wrap">{eventData.description}</p>
+            )}
+          </div>
+
+          <button
+            onClick={copyShareUrl}
+            className="flex items-center gap-1 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-2 rounded-lg text-sm font-bold transition-colors whitespace-nowrap"
+          >
+            <Share2 className="w-4 h-4" />
+            共有
+          </button>
         </div>
 
         {/* タブナビゲーション */}

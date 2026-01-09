@@ -4,13 +4,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Calendar, Check, Loader2, ChevronLeft, ChevronRight 
+import {
+  Calendar, Check, Loader2, ChevronLeft, ChevronRight, Lock, Copy, ExternalLink
 } from 'lucide-react';
-import { 
-  format, addMonths, subMonths, startOfMonth, endOfMonth, 
-  startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, 
-  isSameDay, parseISO 
+import {
+  format, addMonths, subMonths, startOfMonth, endOfMonth,
+  startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth,
+  isSameDay, parseISO
 } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
@@ -96,7 +96,7 @@ const DateSelector = ({ selectedDates, onChange, disabled = false }: DateSelecto
           const isSelected = selectedDates.includes(dateStr);
           const isCurrentMonth = isSameMonth(day, currentMonth);
           const isToday = isSameDay(day, new Date());
-          
+
           return (
             <div
               key={dateStr}
@@ -126,14 +126,19 @@ const DateSelector = ({ selectedDates, onChange, disabled = false }: DateSelecto
 // --- メインコンポーネント: CreateEventScreen ---
 
 interface CreateEventScreenProps {
-  onCreate: (data: any) => Promise<{ id: string }>;
+  onCreate: (data: any) => Promise<{ id: string, password?: string | null }>;
 }
 
 export const CreateEventScreen = ({ onCreate }: CreateEventScreenProps) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [password, setPassword] = useState('');
+  const [usePassword, setUsePassword] = useState(false);
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 作成完了後の状態
+  const [createdEvent, setCreatedEvent] = useState<{ id: string, password?: string | null } | null>(null);
 
   const router = useRouter();
 
@@ -145,7 +150,6 @@ export const CreateEventScreen = ({ onCreate }: CreateEventScreenProps) => {
     }
 
     setIsSubmitting(true);
-      // Server Actionに渡す前に文字列(ISO)に変換する
     try {
       const sorted = sortDates(selectedDates);
       const start = parseISO(sorted[0]).toISOString();
@@ -156,21 +160,89 @@ export const CreateEventScreen = ({ onCreate }: CreateEventScreenProps) => {
         description,
         candidateDates: sorted,
         period: { start, end },
-        participants: []
+        participants: [],
+        password: usePassword ? password : null
       });
-      
-      // クライアント側で画面遷移を行う
-      router.push(`/events/${result.id}`);
-      // 遷移が完了するまでローディング表示を維持
 
-      // 成功時のリダイレクトはServer Action側で行われるため、ここでは何もしない. リダイレクトエラーの場合は無視する（あるいはそのままthrowする）
+      // 作成完了画面へ切り替え
+      setCreatedEvent(result);
+
     } catch (error) {
       console.error("Failed to create event", error);
       alert("イベントの作成に失敗しました。");
-      // エラー時のみローディングを解除して再操作可能にする
       setIsSubmitting(false);
     }
   };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    alert('コピーしました');
+  };
+
+  if (createdEvent) {
+    const shareUrl = `${window.location.origin}/events/${createdEvent.id}`;
+
+    return (
+      <div className="max-w-2xl mx-auto p-8 bg-white shadow-xl rounded-xl my-8 text-center animate-in fade-in zoom-in-95 duration-300">
+        <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+          <Check className="w-8 h-8" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">調整表を作成しました！</h2>
+        <p className="text-gray-600 mb-8">以下の情報を参加者に共有してください。</p>
+
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-left space-y-4 mb-8">
+          <div>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">共有URL</label>
+            <div className="flex gap-2 mt-1">
+              <input
+                readOnly
+                value={shareUrl}
+                className="flex-1 bg-white border border-gray-300 rounded px-3 py-2 text-sm text-gray-700 font-mono select-all"
+              />
+              <button
+                onClick={() => copyToClipboard(shareUrl)}
+                className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-2 rounded flex items-center gap-2 text-sm font-bold shadow-sm"
+              >
+                <Copy className="w-4 h-4" />
+                コピー
+              </button>
+            </div>
+          </div>
+
+          {createdEvent.password && (
+            <div>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                <Lock className="w-3 h-3" /> パスワード
+              </label>
+              <div className="flex gap-2 mt-1">
+                <input
+                  readOnly
+                  value={createdEvent.password}
+                  className="flex-1 bg-white border border-gray-300 rounded px-3 py-2 text-sm text-gray-700 font-mono select-all"
+                />
+                <button
+                  onClick={() => copyToClipboard(createdEvent.password!)}
+                  className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-2 rounded flex items-center gap-2 text-sm font-bold shadow-sm"
+                >
+                  <Copy className="w-4 h-4" />
+                  コピー
+                </button>
+              </div>
+              <p className="text-xs text-rose-500 mt-1">※ パスワードは後で確認できないため、必ず保管してください。</p>
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={() => router.push(`/events/${createdEvent.id}`)}
+          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-lg shadow-lg flex items-center justify-center gap-2 transition"
+        >
+          <ExternalLink className="w-5 h-5" />
+          調整表へ移動する
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white shadow-xl rounded-xl my-8">
@@ -201,22 +273,56 @@ export const CreateEventScreen = ({ onCreate }: CreateEventScreenProps) => {
             disabled={isSubmitting}
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">候補日を選択（複数選択可）</label>
-          <DateSelector 
-            selectedDates={selectedDates} 
-            onChange={setSelectedDates} 
+          <DateSelector
+            selectedDates={selectedDates}
+            onChange={setSelectedDates}
             disabled={isSubmitting}
           />
+        </div>
+
+        <div className="pt-4 border-t border-gray-100">
+          <div className="flex items-center gap-2 mb-4">
+            <input
+              type="checkbox"
+              id="usePassword"
+              checked={usePassword}
+              onChange={(e) => setUsePassword(e.target.checked)}
+              className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+              disabled={isSubmitting}
+            />
+            <label htmlFor="usePassword" className="text-sm font-bold text-gray-700 flex items-center gap-1 cursor-pointer">
+              <Lock className="w-4 h-4 text-gray-500" />
+              パスワードを設定する
+            </label>
+          </div>
+
+          {usePassword && (
+            <div className="animate-in slide-in-from-top-2 duration-200">
+              <input
+                type="text"
+                required={usePassword}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100 disabled:text-gray-500"
+                placeholder="パスワードを入力"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isSubmitting}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                ※ ページ閲覧時にこのパスワードが必要になります。
+              </p>
+            </div>
+          )}
         </div>
 
         <button
           type="submit"
           disabled={isSubmitting}
           className={`w-full py-4 text-white font-bold rounded-lg transition flex items-center justify-center gap-2 shadow-lg
-            ${isSubmitting 
-              ? 'bg-indigo-400 cursor-not-allowed opacity-80' 
+            ${isSubmitting
+              ? 'bg-indigo-400 cursor-not-allowed opacity-80'
               : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-xl'
             }
           `}
