@@ -1,8 +1,8 @@
 // components\InputForm.tsx :予定の入力
 
 import React, { useState, useMemo } from 'react';
-import { 
-  Check, X, Copy, AlertCircle, Plus, Clock, Trash2, Loader2 
+import {
+  Check, X, Copy, AlertCircle, Plus, Clock, Trash2, Loader2
 } from 'lucide-react';
 import { format, parseISO, getDay, eachDayOfInterval } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -59,20 +59,20 @@ export const InputForm = ({ eventData, onSave, onCancel, initialData }: InputFor
 
     if (hasInput) {
       const confirmMsg = `入力モードを「${newMode === 'whitelist' ? '参加可' : '参加不可'}」に変更します。\n\n現在入力されている日時の「逆」を選択状態に変換しますか？`;
-      
+
       if (window.confirm(confirmMsg)) {
         const converted = targetDates.map(day => {
           const dateStr = format(day, 'yyyy-MM-dd');
           const existing = availabilities.find(a => a.dateStr === dateStr);
           const ranges = existing ? existing.timeRanges : [];
-          
+
           return {
             dateStr,
             timeRanges: invertTimeRanges(ranges),
             memo: existing ? existing.memo : ''
           };
         });
-        
+
         setAvailabilities(converted);
         setMode(newMode);
       }
@@ -192,8 +192,8 @@ export const InputForm = ({ eventData, onSave, onCancel, initialData }: InputFor
               <X className="w-4 h-4" /> 参加不可を入力
             </button>
           </div>
-          
-          <button 
+
+          <button
             onClick={() => setBulkModalOpen(true)}
             disabled={isSaving}
             className="text-indigo-600 text-sm font-bold flex items-center gap-1 hover:bg-indigo-50 px-2 py-1 rounded"
@@ -201,11 +201,11 @@ export const InputForm = ({ eventData, onSave, onCancel, initialData }: InputFor
             <Copy className="w-4 h-4" /> 一括入力
           </button>
         </div>
-        
+
         {mode === 'blacklist' && (
           <div className="mt-2 text-xs text-rose-600 flex items-center gap-1 bg-rose-50 p-2 rounded">
             <AlertCircle className="w-4 h-4" />
-            忙しい人向け: 入力した日時が「NG」として扱われます。何も入力しない日時は「参加可能」となります。
+            入力した日時が「NG」として扱われます。何も入力しない日時は「参加可能」となります。
           </div>
         )}
       </div>
@@ -215,14 +215,14 @@ export const InputForm = ({ eventData, onSave, onCancel, initialData }: InputFor
           const dateStr = format(day, 'yyyy-MM-dd');
           const data = getDayAvailability(dateStr);
           const isWeekend = getDay(day) === 0 || getDay(day) === 6;
-          
+
           return (
             <div key={dateStr} className={`border rounded-lg p-3 ${isWeekend ? 'bg-gray-50' : 'bg-white'}`}>
               <div className="flex justify-between items-center mb-2">
                 <div className="font-bold text-gray-700 flex items-center gap-2">
                   {format(day, 'MM/dd (E)', { locale: ja })}
                 </div>
-                <button 
+                <button
                   onClick={() => addTimeRange(dateStr)}
                   disabled={isSaving}
                   className="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium px-3 py-1.5 rounded-full flex items-center gap-1 border border-indigo-100"
@@ -238,41 +238,41 @@ export const InputForm = ({ eventData, onSave, onCancel, initialData }: InputFor
                   </p>
                 )}
                 {data.timeRanges.map((range: any, idx: number) => {
-                    const statusLabel = getTimeRangeLabel(range.start, range.end);
-                    return (
-                        <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2 p-2 rounded border border-dashed border-gray-300 bg-gray-50/50">
-                            <div className={`flex items-center gap-1 flex-1 p-1 rounded border bg-white ${mode === 'whitelist' ? 'border-indigo-200' : 'border-rose-200'}`}>
-                              <Clock className={`w-4 h-4 ${mode === 'whitelist' ? 'text-indigo-400' : 'text-rose-400'}`} />
-                              <TimeSelector 
-                                value={range.start} 
-                                onChange={(val) => updateTimeRange(dateStr, idx, 'start', val)}
-                                className="flex-1"
-                                placeholder="--"
-                              />
-                              <span className="text-gray-400 px-1">〜</span>
-                              <TimeSelector 
-                                value={range.end} 
-                                onChange={(val) => updateTimeRange(dateStr, idx, 'end', val)}
-                                className="flex-1"
-                                placeholder="--"
-                              />
-                            </div>
-                            
-                            <div className="flex justify-between items-center gap-2 w-full sm:w-auto">
-                                <span className="text-xs font-medium text-gray-500 min-w-[80px]">
-                                    {statusLabel}
-                                </span>
-                                <button 
-                                    onClick={() => removeTimeRange(dateStr, idx)}
-                                    className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-                    );
+                  const statusLabel = getTimeRangeLabel(range.start, range.end);
+                  return (
+                    <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2 p-2 rounded border border-dashed border-gray-300 bg-gray-50/50">
+                      <div className={`flex items-center gap-1 flex-1 p-1 rounded border bg-white ${mode === 'whitelist' ? 'border-indigo-200' : 'border-rose-200'}`}>
+                        <Clock className={`w-4 h-4 ${mode === 'whitelist' ? 'text-indigo-400' : 'text-rose-400'}`} />
+                        <TimeSelector
+                          value={range.start}
+                          onChange={(val) => updateTimeRange(dateStr, idx, 'start', val)}
+                          className="flex-1"
+                          placeholder="--"
+                        />
+                        <span className="text-gray-400 px-1">〜</span>
+                        <TimeSelector
+                          value={range.end}
+                          onChange={(val) => updateTimeRange(dateStr, idx, 'end', val)}
+                          className="flex-1"
+                          placeholder="--"
+                        />
+                      </div>
+
+                      <div className="flex justify-between items-center gap-2 w-full sm:w-auto">
+                        <span className="text-xs font-medium text-gray-500 min-w-[80px]">
+                          {statusLabel}
+                        </span>
+                        <button
+                          onClick={() => removeTimeRange(dateStr, idx)}
+                          className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
                 })}
-                
+
                 <input
                   type="text"
                   placeholder="メモ (例: 遅れるかも)"
@@ -290,7 +290,7 @@ export const InputForm = ({ eventData, onSave, onCancel, initialData }: InputFor
         <button onClick={onCancel} disabled={isSaving} className="flex-1 py-2 border border-gray-300 rounded-lg text-gray-600 font-medium hover:bg-gray-50">
           キャンセル
         </button>
-        <button 
+        <button
           onClick={handleSave}
           disabled={isSaving}
           className="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-bold shadow-md hover:bg-indigo-700 disabled:bg-indigo-400 flex justify-center items-center gap-2"
@@ -300,10 +300,10 @@ export const InputForm = ({ eventData, onSave, onCancel, initialData }: InputFor
         </button>
       </div>
 
-      <BulkInputModal 
-        isOpen={isBulkModalOpen} 
-        onClose={() => setBulkModalOpen(false)} 
-        onApply={handleBulkApply} 
+      <BulkInputModal
+        isOpen={isBulkModalOpen}
+        onClose={() => setBulkModalOpen(false)}
+        onApply={handleBulkApply}
       />
     </div>
   );
